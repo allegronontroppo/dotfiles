@@ -3,7 +3,7 @@
 ;; It must be stored in your home directory.
 
 (defun dotspacemacs/layers ()
-  "Configuration Layers declaration.
+ "Configuration Layers declaration.
 You should not put any user code in this function besides modifying the variable
 values."
   (setq-default
@@ -314,7 +314,7 @@ explicitly specified that a variable should be set before a package is loaded,
 you should place you code here."
 
   ;; use company for auto-complete every mode
-  (global-company-mode)
+  ;(global-company-mode)
 
   ;; use Marked2 for markdown open command
   ;; via: http://jblevins.org/log/marked-2-command
@@ -326,6 +326,26 @@ you should place you code here."
 
   ;; editorconfig-mode enabled
   ;;(editorconfig-mode 1)
+
+  ;; gtags personal-keybindings
+  (add-hook 'c-mode-hook 'helm-gtags-mode)
+  (add-hook 'c++-mode-hook 'helm-gtags-mode)
+  (add-hook 'java-mode-hook 'helm-gtags-mode)
+  (add-hook 'asm-mode-hook 'helm-gtags-mode)
+  ;; customize
+  (custom-set-variables
+   '(helm-gtags-path-style 'relative)
+   '(helm-gtags-ignore-case t)
+   '(helm-gtags-auto-update t))
+
+	(eval-after-load "helm-gtags"
+  '(progn
+    (bind-key "M-g t t" 'helm-gtags-find-tag helm-gtags-mode-map)
+    (bind-key "M-g t r" 'helm-gtags-find-rtag helm-gtags-mode-map)
+    (bind-key "M-g t s" 'helm-gtags-find-symbol helm-gtags-mode-map)
+    (bind-key "M-g t p" 'helm-gtags-parse-file helm-gtags-mode-map)
+    (bind-key "M-g t <" 'helm-gtags-previous-history helm-gtags-mode-map)
+    (bind-key "M-g t >" 'helm-gtags-next-history helm-gtags-mode-map)))
 
   ;; for OSX
   (when (eq system-type 'darwin)
@@ -345,7 +365,10 @@ you should place you code here."
 ;;              '(lambda () (mac-select-input-source "com.google.inputmethod.Japanese.Roman")))
     )
 
-  )
+  (setq ispell-local-dictionary "en_US")
+  (setq ispell-local-dictionary-alist
+        '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil nil nil utf-8)))
 
+  )
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
