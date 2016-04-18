@@ -36,9 +36,9 @@ values."
      (shell :variables
             shell-default-height 30
             shell-default-position 'bottom)
-     spell-checking
+     ;;spell-checking
      syntax-checking
-     version-control
+     ;;version-control
 
      gtags
    ;;  osx
@@ -305,6 +305,18 @@ before packages are loaded. If you are unsure, you should try in setting them in
 
   )
 
+(defun my/evil-paste-pop-n ()
+  (interactive)
+  (if (eq last-command 'evil-paste-after) (evil-paste-pop -1)
+    (next-line))
+  )
+
+(defun my/evil-paste-pop ()
+  (interactive)
+  (if (eq last-command 'evil-paste-after) (evil-paste-pop 1)
+    (previous-line))
+  )
+
 (defun dotspacemacs/user-config ()
   "Configuration function for user code.
 This function is called at the very end of Spacemacs initialization after
@@ -327,6 +339,12 @@ you should place you code here."
   ;; editorconfig-mode enabled
   ;;(editorconfig-mode 1)
 
+  ;; c-mode
+  (add-hook 'c-mode-hook '(lambda ()
+                            (c-set-style "bsd")
+                            (setq tab-width 8)
+                            ) t)
+
   ;; gtags personal-keybindings
   (add-hook 'c-mode-hook 'helm-gtags-mode)
   (add-hook 'c++-mode-hook 'helm-gtags-mode)
@@ -337,6 +355,10 @@ you should place you code here."
    '(helm-gtags-path-style 'relative)
    '(helm-gtags-ignore-case t)
    '(helm-gtags-auto-update t))
+
+  (bind-key "M-n" 'evil-normal-state)
+  (bind-key "C-n" 'my/evil-paste-pop-n evil-normal-state-map)
+  (bind-key "C-p" 'my/evil-paste-pop   evil-normal-state-map)
 
 	(eval-after-load "helm-gtags"
   '(progn

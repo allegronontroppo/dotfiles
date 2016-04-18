@@ -242,7 +242,51 @@ values."
    ;; (default nil)
    dotspacemacs-whitespace-cleanup nil
    ))
+;;----------
+;; http_proxy環境変数があるかどうかでproxy設定するかを決める。
 
+(defun set-proxy ()
+  (when (getenv "http_proxy")
+    (cl-flet (
+	   ;; get user:passwd entry from http_proxy environment var and base64-encode it.
+	   (get-passwd-encode-string ()
+	     (let* ((ev (getenv "http_proxy"))
+		    (x (decode-coding-string (url-unhex-string ev) 'utf-8))
+		    )
+	       (if (not (equal x ""))
+		   (base64-encode-string 
+		    (substring x (+ 2 (string-match "//" x)) (string-match "@" x))
+		    )
+		 nil)))
+	   (get-proxy-url-string ()
+	     (let* ((ev (getenv "http_proxy"))
+		    (x (decode-coding-string (url-unhex-string ev) 'utf-8))
+		    )
+	       (if (not (equal x ""))
+		   (substring x (+ 1 (string-match "@" x)))
+		 ""))) )
+    ;; proxy service var
+      (setq url-proxy-services `(("no_proxy" . "^\\(localhost \\| 10.*\\)")
+				 ("http"  . ,(get-proxy-url-string))
+				 ("https" . ,(get-proxy-url-string))
+				 ))
+    ;; あと、gitのglobal設定で追加しておくこと。
+    ;; cf.  http://sunday-programming.hatenablog.com/entry/2013/10/31/202918
+    ;;
+    ;; > git config --global http.proxy http://proxy.hogedomain.com:8080
+    ;; > git config --global https.proxy http://proxy.hogedomain.com:8080
+    ;; > git config --global url."https://".insteadOf git://
+    ;; > git config --list  <-- これで確認
+
+    ;; from   http://yoshimov.com/tips/emacs-package-list-with-proxy/
+    ;; set value of (base64-decode-string "user:passwd") to last string in the following.
+    ;;(url-basic-auth (getenv "http_proxy"))
+      (setq url-http-proxy-basic-auth-storage
+	    `(( ,(get-proxy-url-string)
+		("Proxy" .  ,(get-passwd-encode-string)  ))))
+    )))
+
+;;----------
 (defun dotspacemacs/user-init ()
   "Initialization function for user code.
 It is called immediately after `dotspacemacs/init', before layer configuration
@@ -250,6 +294,14 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
+
+  ;;(setq url-debug t)
+  ;;(when (executable-find "curl")
+  ;;  (setq request-curl (executable-find "curl"))
+  ;;  (setq request-backend 'curl)
+  ;;)
+  (set-proxy)
+
   )
 
 (defun dotspacemacs/user-config ()
