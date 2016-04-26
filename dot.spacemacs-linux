@@ -20,7 +20,7 @@ values."
    '(
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
-     ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
+    ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      (auto-completion
@@ -73,12 +73,12 @@ values."
    ;; This variable has no effect if Emacs is launched with the parameter
    ;; `--insecure' which forces the value of this variable to nil.
    ;; (default t)
-   dotspacemacs-elpa-https t
+   dotspacemacs-elpa-https nil ;; t
    ;; Maximum allowed time in seconds to contact an ELPA repository.
-   dotspacemacs-elpa-timeout 5
+   dotspacemacs-elpa-timeout 30 ;; 5
    ;; If non nil then spacemacs will check for updates at startup
    ;; when the current branch is not `develop'. (default t)
-   dotspacemacs-check-for-update t
+   dotspacemacs-check-for-update nil ;; t
    ;; One of `vim', `emacs' or `hybrid'. Evil is always enabled but if the
    ;; variable is `emacs' then the `holy-mode' is enabled at startup. `hybrid'
    ;; uses emacs key bindings for vim's insert mode, but otherwise leaves evil
@@ -116,7 +116,7 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font. `powerline-scale' allows to quickly tweak the mode-line
    ;; size to make separators look not too crappy.
-   dotspacemacs-default-font '("Source Code Pro"
+   dotspacemac-default-font '("Source Code Pro"
                                :size 13
                                :weight normal
                                :width normal
@@ -299,10 +299,11 @@ before packages are loaded. If you are unsure, you should try in setting them in
   ;;  (setq request-curl (executable-find "curl"))
   ;;  (setq request-backend 'curl)
   ;;)
-  (setq dotspacemacs-elpa-https nil)
-  (setq dotspacemacs-elpa-timeout 30)
+  ;;(setq dotspacemacs-elpa-https nil)
+  ;;(setq dotspacemacs-elpa-timeout 30)
   (set-proxy)
-
+  ;; for paradox  my github token
+  (setq paradox-github-token "11eb68cf713205b504d0c22363d9e06229004a96")
   )
 
 (defun my/evil-paste-pop-n ()
@@ -324,6 +325,11 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place you code here."
+  ;; spacemacsのカスタマイズは、
+  ;; - dotspacemacs/user-config()
+  ;; - dotspacemacs-additional-packages 変数　  spacemacs/private/localの下
+  ;; - layerを作る。                            spacemacs/privateの下
+  ;; の３つが考えられる。
 
   ;; use company for auto-complete every mode
   ;(global-company-mode)
@@ -368,6 +374,14 @@ you should place you code here."
     (bind-key "M-g t p" 'helm-gtags-parse-file helm-gtags-mode-map)
     (bind-key "M-g t <" 'helm-gtags-previous-history helm-gtags-mode-map)
     (bind-key "M-g t >" 'helm-gtags-next-history helm-gtags-mode-map)))
+
+  (eval-after-load "helm-ag"
+    '(progn
+       ;; default key is   SPC s a a : helm-ag-this-file
+       ;;(bind-key "SPC a g" 'helm-ag)
+       ))
+  (spacemacs/set-leader-keys
+    "ag"  'helm-ag)
 
   ;; for OSX
   (when (eq system-type 'darwin)
