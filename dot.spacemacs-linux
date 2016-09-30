@@ -50,7 +50,8 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '( mozc
+   dotspacemacs-additional-packages '( ;; mozc
+                                       mozc-im
                                        mozc-popup
                                       )
    ;; A list of packages and/or extensions that will not be install and loaded.
@@ -341,11 +342,11 @@ you should place you code here."
   ;;    )
 
   ;; use mozc if found
-  (when (require 'mozc nil t)
+  (when (require 'mozc-im nil t)
     ;; mozcがrequireでloadされるときにのみ設定。
     ;; そのためには、paradox-list-packageで mozc, mozc-in, mozc-popups, ac-mozc をインストールしておくこと。
     ;;
-    (setq default-input-method "japanese-mozc")
+    (setq default-input-method "japanese-mozc-im")
     ;; for 101us keyboard
     (setq mozc-keymap-kana mozc-keymap-kana-101us)
     ;;
