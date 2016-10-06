@@ -31,7 +31,8 @@ values."
      better-defaults
      emacs-lisp
      git
-     markdown
+     ;;markdown
+     pandoc
      org
      (shell :variables
             shell-default-height 30
@@ -41,10 +42,11 @@ values."
      ;;version-control
 
      gtags
-   ;;  osx
+     ;;  osx
      python
      emoji
      swift
+     haskell
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -363,7 +365,8 @@ you should place you code here."
   ;; use Marked2 for markdown open command
   ;; via: http://jblevins.org/log/marked-2-command
   ;;(setq markdown-open-command "/usr/local/bin/mark")
-  (setq markdown-open-command "/usr/local/bin/markdown")
+  ;;(setq markdown-open-command "/usr/local/bin/markdown")
+  ;;(setq markdown-command "/usr/bin/pandoc --smart -f markdown -t html")
 
   ;; see via https://github.com/syl20bnr/spacemacs/issues/2032
   (fset 'evil-visual-update-x-selection 'ignore)
@@ -377,35 +380,55 @@ you should place you code here."
                             (setq tab-width 8)
                             ) t)
 
+  (bind-key "M-n" 'evil-normal-state)
+  (bind-key "C-n" 'my/evil-paste-pop-n evil-normal-state-map)
+  (bind-key "C-p" 'my/evil-paste-pop   evil-normal-state-map)
+
   ;; gtags personal-keybindings
-  (add-hook 'c-mode-hook 'helm-gtags-mode)
-  (add-hook 'c++-mode-hook 'helm-gtags-mode)
-  (add-hook 'java-mode-hook 'helm-gtags-mode)
-  (add-hook 'asm-mode-hook 'helm-gtags-mode)
+  (spacemacs/helm-gtags-define-keys-for-mode 'c-mode)
+  (spacemacs/helm-gtags-define-keys-for-mode 'c++-mode)
+  ;;(add-hook 'c-mode-hook 'helm-gtags-mode)
+  ;;(add-hook 'c++-mode-hook 'helm-gtags-mode)
+  ;;(add-hook 'java-mode-hook 'helm-gtags-mode)
+  ;;(add-hook 'asm-mode-hook 'helm-gtags-mode)
   ;; customize
   (custom-set-variables
    '(helm-gtags-path-style 'relative)
    '(helm-gtags-ignore-case t)
    '(helm-gtags-auto-update t))
 
-  (bind-key "M-n" 'evil-normal-state)
-  (bind-key "C-n" 'my/evil-paste-pop-n evil-normal-state-map)
-  (bind-key "C-p" 'my/evil-paste-pop   evil-normal-state-map)
+  (progn
+    (bind-key* "M-g t t" 'helm-gtags-find-tag)
+    (bind-key* "M-g t r" 'helm-gtags-find-rtag)
+    (bind-key* "M-g t s" 'helm-gtags-find-symbol)
+    (bind-key* "M-g t p" 'helm-gtags-parse-file)
+    (bind-key* "M-g t <" 'helm-gtags-previous-history)
+    (bind-key* "M-g t >" 'helm-gtags-next-history))
 
-	(eval-after-load "helm-gtags"
-  '(progn
-    (bind-key "M-g t t" 'helm-gtags-find-tag helm-gtags-mode-map)
-    (bind-key "M-g t r" 'helm-gtags-find-rtag helm-gtags-mode-map)
-    (bind-key "M-g t s" 'helm-gtags-find-symbol helm-gtags-mode-map)
-    (bind-key "M-g t p" 'helm-gtags-parse-file helm-gtags-mode-map)
-    (bind-key "M-g t <" 'helm-gtags-previous-history helm-gtags-mode-map)
-    (bind-key "M-g t >" 'helm-gtags-next-history helm-gtags-mode-map)))
-
-  (eval-after-load "helm-ag"
-    '(progn
-       ;; default key is   SPC s a a : helm-ag-this-file
-       ;;(bind-key "SPC a g" 'helm-ag)
-       ))
+  (bind-keys*
+   ("M-g M-b" . helm-buffers-list) ;; buffer-list
+   ;;("M-x"   . helm-M-x)        ;; smexをつかう。
+   ("M-g x"   . helm-M-x)        ;; call helm-M-x
+   ("M-g M-i" . helm-imenu)      ;; call imenu by M-gi
+   ("M-g M-l" . helm-recentf)
+   ("M-g M-u" . helm-resume)     ;; same as C-x c b
+   ("M-g M-f" . helm-find-files) ;; call anything by M-gf
+   ("M-g M-m" . helm-mini)       ;; call helm-mini by M-gm
+   ("M-g M-y" . helm-show-kill-ring) ;; kill-ring履歴一覧表示
+   ;;   ("M-g C-g" . helm-git-find-files)
+   ("M-g M-;" . helm-browse-project)
+   ;; helm-ag
+   ("M-g a g" . helm-ag)
+   ("M-g a t" . helm-ag-this-file)
+   ("M-g a p" . helm-ag-pop-stack)
+   ("M-g a c" . helm-ag-clear-stack)
+   ;; swoop
+   ("M-'"     . helm-swoop)
+   ("M-\""    . helm-swoop-back-to-last-point)
+   ("C-c M-'" . helm-multi-swoop)
+   ("C-x M-'" . helm-multi-swoop-all)
+   )
+  
   (spacemacs/set-leader-keys
     "ag"  'helm-ag)
 
