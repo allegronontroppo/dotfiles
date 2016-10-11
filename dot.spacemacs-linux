@@ -32,6 +32,7 @@ values."
      emacs-lisp
      git
      ;;markdown
+     (markdown :variables markdown-live-preview-engine 'vmd)
      pandoc
      org
      (shell :variables
@@ -47,6 +48,7 @@ values."
      emoji
      swift
      haskell
+     c-c++
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
