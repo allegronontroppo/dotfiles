@@ -435,7 +435,8 @@ you should place you code here."
    )
   
   (spacemacs/set-leader-keys
-    "ag"  'helm-ag)
+    "@"   'set-mark-command		;; SPC @   to  set-mark-command (\C-SPC)
+    "ag"  'helm-ag)						;; SPC ag
 
   ;; for OSX
   (when (eq system-type 'darwin)
