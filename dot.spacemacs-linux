@@ -52,10 +52,16 @@ values."
      (shell :variables
             shell-default-height 30
             shell-default-position 'bottom)
-     ;;spell-checking
+     ;;spell-checking - default off
+     ;;        https://blog.nijohando.jp/post/beginning-spacemacs/
+     ;; SPC t S     スペルチェックを有効 / 無効にする
+     ;; SPC S b     バッファに対してスペルチェックを実施
+     ;; SPC S c     スペルミスの修正
+     ;; SPC S n     次のスペルミスへジャンプ
+     (spell-checking :variables spell-checking-enable-by-default nil)
      syntax-checking
      ;;version-control
-
+     yspel
      gtags
      ;;  osx
      python
@@ -77,6 +83,11 @@ values."
                                       mozc-im
                                       mozc-popup
                                       slime-company
+                                      writeroom-mode
+                                      org-variable-pitch
+                                      open-junk-file
+                                      ob-ipython
+                                      yasnippet-snippets ;; yas-snippet
                                       )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -106,9 +117,9 @@ values."
    ;; This variable has no effect if Emacs is launched with the parameter
    ;; `--insecure' which forces the value of this variable to nil.
    ;; (default t)
-   dotspacemacs-elpa-https nil ;; t
+   dotspacemacs-elpa-https t
    ;; Maximum allowed time in seconds to contact an ELPA repository.
-   dotspacemacs-elpa-timeout 30 ;; 5
+   dotspacemacs-elpa-timeout 5
    ;; If non nil then spacemacs will check for updates at startup
    ;; when the current branch is not `develop'. Note that checking for
    ;; new versions works via git commands, thus it calls GitHub services
@@ -153,18 +164,36 @@ values."
                          spacemacs-light
                          solarized-light
                          solarized-dark
-                         leuven
-                         monokai
-                         zenburn)
+                        ; leuven
+                        ; monokai
+                        ; zenburn
+                         sanityinc-tomorrow-day
+                         sanityinc-tomorrow-night
+                         sanityinc-tomorrow-blue
+                         sanityinc-tomorrow-bright
+                         )
    ;; If non nil the cursor color matches the state color in GUI Emacs.
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Source Code Pro"
-                               :size 13
-                               :weight normal
-                               :width normal
-                               :powerline-scale 1.1)
+;;   dotspacemacs-default-font '("Source Code Pro"
+;;                               :size 13
+;;                               :weight normal
+;;                               :width normal
+;;                               :powerline-scale 1.1)
+   dotspacemacs-default-font (cond ((spacemacs/system-is-mswindows)
+                                    '("Meiryo UI" ;; "Consolas" ;;"Yu Gothic UI"
+                                      :size 16
+                                      :weight normal
+                                      :width normal
+                                      :powerline-scale 1.1))
+                                   (t
+                                    '("MyricaM M";;"Meiryo UI" ;; "Consolas" ;;"Yu Gothic UI"
+                                      :size 16
+                                      :weight normal
+                                      :width normal
+                                      :powerline-scale 1.1))
+                                    )
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
@@ -308,7 +337,7 @@ values."
    ;; List of search tool executable names. Spacemacs uses the first installed
    ;; tool of the list. Supported tools are `ag', `pt', `ack' and `grep'.
    ;; (default '("ag" "pt" "ack" "grep"))
-   dotspacemacs-search-tools '("ag" "pt" "ack" "grep")
+   dotspacemacs-search-tools '("rg" "ag" "pt" "ack" "grep")
    ;; The default package repository used if no explicit repository has been
    ;; specified with an installed package.
    ;; Not used for now. (default nil)
@@ -377,7 +406,7 @@ values."
   "Initialization function for user code.
 It is called immediately after `dotspacemacs/init', before layer configuration
 executes.
-This function is mostly useful for variables that need to be set
+ This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
 
@@ -391,8 +420,17 @@ before packages are loaded. If you are unsure, you should try in setting them in
   (set-proxy)
   ;; for paradox  my github token
   (setq paradox-github-token "11eb68cf713205b504d0c22363d9e06229004a96")
+  ;; pandoc
+  (when (file-exists-p "c:/Program Files/Pandoc/pandoc.exe")
+    (custom-set-variables
+     '(org-pandoc-command "c:/Program Files/Pandoc/pandoc.exe"))
+                                        ;(setq markdown-comman "c:/Program Files/Pandoc/pandoc.exe --smart -f markdown -t html")
+    )
   )
 
+;;
+;; evil normal modeでC-n C-pで普通は上下に移動したい。
+;;
 (defun my/evil-paste-pop-n ()
 (interactive)
 (if (eq last-command 'evil-paste-after) (evil-paste-pop -1)
@@ -405,6 +443,49 @@ before packages are loaded. If you are unsure, you should try in setting them in
   (previous-line))
 )
 
+;; c-mode おすすめ設定 https://seesaawiki.jp/whiteflare503/d/Emacs%20%a5%a4%a5%f3%a5%c7%a5%f3%a5%c8
+(defun my-c-mode-common-conf ()
+  ;; (electric-mode + 自動インデント + 欲張り削除) ";"を押すと現在の行を
+  ;; 再インデントして自動的に改行をするモードのなる設定。これは強力すぎて扱いづらい。
+  ;; (c-toggle-auto-hungry-state 1)
+
+  ;; (electric-mode) ";"や"{"などをを入力した場合現在の行を自動インデントを有功にする
+  ;; (c-toggle-electric-state 1)
+
+  ;; (欲張り削除 + electric-mode)バックスペースなどの削除するキーを押すと
+  ;; スペースを一気に消す欲張り削除機能とelecetic-modeをを有功にする
+  (c-toggle-hungry-state 1)
+
+  ;; この関数は廃れた機能 (obsoleteされた)ものなので、emacsのバージョンが22.1以上なら使わないこと
+  ;; (c-toggle-auto-state 1)　obsoleted
+
+  ;; (自動インデント) 改行をしたら次の行を自動でインデントしてくれる
+  ;; (c-toggle-auto-newline 1)
+
+  ;; C-m を newline-and-indentに設定する
+  ;; しかしこれをするとEnterのキーマップまで影響するので
+  ;; 大人しくC-jを使ったnewline-and-indentを使うほうが
+  ;; (define-key c-mode-base-map ""\C-m" 'newline-and-indent)
+
+  ;(c-set-style "stroustrup")                  ;; スタイルはストラウストラップ
+  ;(c-set-style "cc-mode")                     ;; スタイルはcc-mode indent=4
+  ;(c-set-style "bsd")
+  (c-set-style "linux")
+  ;(flyspell-prog-mode)                        ;; flyspell-prog-mode(自動ispell機能)
+  (show-paren-mode t)                         ;; カッコを強調表示する
+
+  ;; 他のエディタなどがファイルを書き換えたらすぐにそれを反映する
+  ;; auto-revert-modeを有効にする
+  (auto-revert-mode)
+  )
+
+(defun dir-search (a)
+  (cond ((null a) nil)
+        ((file-directory-p (car a)) (car a))
+        (t (dir-search (cdr a)))))
+(defvar msys2-directory "Directory of msys2")
+
+
 (defun dotspacemacs/user-config ()
   "Configuration function for user code.
 This function is called at the very end of Spacemacs initialization after
@@ -412,6 +493,7 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
+
   ;; spacemacsのカスタマイズは、
   ;; - dotspacemacs/user-config()
   ;; - dotspacemacs-additional-packages 変数　  spacemacs/private/localの下
@@ -425,8 +507,28 @@ you should place your code here."
   ;;            (progn ...)
   ;;    )
 
-  ;; use mozc if found
-  (when (require 'mozc-im nil t)
+  (require 'use-package)
+  (require 'bind-key)
+  ;; font
+  (cond ((spacemacs/system-is-mswindows)
+         (set-face-attribute 'variable-pitch nil
+                             :family "Yu Mincho"
+                             :height 140)
+         (set-face-attribute 'fixed-pitch nil
+                             :family "Meiryo UI"
+                             :height 140)
+         )
+        (t
+         (set-face-attribute 'variable-pitch nil
+                             :family "MyricaM N";;"Yu Mincho"
+                             :height 140)
+         (set-face-attribute 'fixed-pitch nil
+                             :family "MyricaM M";;"Consolas"
+                             :height 140)
+         ))
+
+  ;; use mozc if found (linux only)
+  (when (and (require 'mozc-im nil t) (spacemacs/system-is-linux))
     ;; mozcがrequireでloadされるときにのみ設定。
     ;; そのためには、paradox-list-packageで mozc, mozc-in, mozc-popups, ac-mozc をインストールしておくこと。
     ;;
@@ -438,29 +540,166 @@ you should place your code here."
     (setq mozc-candidate-style 'popup)
     ;;(require 'ac-mozc)
     ;;(define-key ac-mode-map (bkd "C-c C-\\") 'ac-complete-mozc)
+    )
+  ;; windows only
+  (when (spacemacs/system-is-mswindows)
+    ;; exec path   https://nagayasu-shinya.com/emacs-msys2-path/
+    ;; MSYS2 のコマンドを使えるようにする.
+    (setq msys2-directory (dir-search '("c:/msys32" "c:/msys64" "d:/msys32" "d:/msys64")))
 
+    (setenv "PATH"
+            (concat
+             ;; 下記の行に MSYS2 のコマンドの実行可能ファイルがある場所を設定してください. スラッシュが2つ連続することに注意！
+             ;; 区切り文字はセミコロン
+             "C:\\msys32\\usr\\bin;"
+             (getenv "PATH")))
+    ;; 区切り文字はなし
+    (setq exec-path (append exec-path '("C:\\msys32\\usr\\bin")))
+
+    ;;
+    ;; https://qiita.com/KazuSoap/items/ee7a4dec80308dbd1d41
+    ;;
+    (setq shell-command-switch "-c")
+
+    ;; シェルからの起動では exec-path-from-shell を実行しない
+    (let ((shell-level (getenv "SHLVL")))
+      (when (or (not shell-level) (string= "0" shell-level))
+        (when (eq system-type 'windows-nt)
+          ;; bash のフルパスを指定
+          (setq shell-file-name "c:/msys64/usr/bin/bash")
+          (defvar explicit-shell-file-name)
+          (setq explicit-shell-file-name shell-file-name)
+          (setenv "SHELL" shell-file-name)
+
+          ;; msys2 のみの設定 mingw64 とパスを共有
+          ;;(setenv "MSYSTEM" "MING")
+          (setenv "MSYSTEM" "MINGW64")
+
+          ;; 環境変数 PATH のときのみパスの変換を実行
+          (defun ad-exec-path-from-shell-setenv (orig-fun &rest args)
+            (when (string=  (car args) "PATH")
+              (setf (nth 1 args)
+                    (with-temp-buffer
+                      (call-process "c:/msys64/usr/bin/cygpath"
+                                    nil '(t nil) nil "-amp" (nth 1 args))
+                      (unless (bobp)
+                        (goto-char (point-min))
+                        (buffer-substring-no-properties (point)
+                                                        (line-end-position))))))
+            (apply orig-fun args))
+          (advice-add 'exec-path-from-shell-setenv
+                      :around 'ad-exec-path-from-shell-setenv))
+
+        ;; 引き継ぎたい環境変数を列挙
+        (exec-path-from-shell-copy-envs '("PATH" "MANPATH" "PKG_CONFIG_PATH"))))
     )
 
+  ;; ime
+  ;(defun toggle-ime ()
+  ;  (interactive)
+  ;  (when (eq evil-state 'hybrid)
+  ;    (toggle-input-method)))
+
+  ;(bind-key [zenkaku-hankaku] 'toggle-ime)
+  ;(bind-key [kanji] 'toggle-ime)
+
+  ;(defun force-ime-off ()
+  ;  (interactive)
+  ;  (when current-input-method
+  ;    (evil-deactivate-input-method)))
+  ;(add-hook 'evil-hybrid-state-exit-hook 'force-ime-off)
+
+  ;; ripgrep (rg)
+  (setq helm-grep-ag-command  "rg --color=always --smart-case --no-heading --line-number %s %s %s")
+  (setq helm-ag-base-command "rg -S --vimgrep --no-heading")
+
+  ;; cua-mode 矩形編集開始：C-c u
+  ;;    https://d.akinori.org/2012/06/14/emacsの範囲選択uiを大幅拡張してくれるcua-mode/
+  (cua-mode t)
+  (setq cua-enable-cua-keys nil) ;; cua-mode の不要なキーバインドは除去
+  ;;(define-key global-map (kbd "C-RET") 'cua-set-rectangle-mark)
+  (bind-key "C-c u" 'cua-set-rectangle-mark) ;; C-c uのあと、Shift+→とかで範囲選択
+  ;; -- 矩形選択中のキーバインド --
+  ;;  M-p	矩形の幅を固定
+  ;;  M-b	空白文字で埋める。 open-rectangle と同等
+  ;;  M-s	文字列で置き換える。 string-rectangle と同等
+  ;;  M-f	1種類の文字で埋める。 string-rectangle で1文字指定したときと同等
+  ;;  M-i	矩形領域内の数字をインクリメントする
+  ;;  M-n	矩形領域を連番で埋める。フォーマット指定可
+
+  ;; C言語系のモード全てに適用されるフック
+  ;; c-mode-common-hookにフックを設定する
+  (add-hook 'c-mode-common-hook 'my-c-mode-common-conf)
+
+  ;; more colors in emacs terminals : need package eterm-256color
+  (add-hook 'term-mode-hook #'eterm-256color-mode)
+
+  ;; ispell
+  ;;   http://keisanbutsuriya.hateblo.jp/entry/2015/02/10/152543
+  ;;    使う前に
+  ;;    $ echo "lang en_US" >> ~/.aspell.conf
+  ;;   やっておく。
+  ;;(with-eval-after-load 'org )
+  (with-eval-after-load "ispell"
+    (setq-default ispell-program-name "aspell")
+    (add-to-list 'ispell-skip-region-alist '("[^\000-\377]+"))
+    ;; key bind
+    (global-set-key (kbd "<f8>") 'ispell-word)
+    (global-set-key (kbd "C-<f8>") 'flyspell-mode)
+
+    (setq ispell-local-dictionary "en_US")
+    (setq ispell-local-dictionary-alist
+          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil nil nil utf-8)))
+    ;; set 'lang en_US' in ~/.aspell.conf
+    )
+
+  ;;
+  ;; open-junk-file
+  ;;   http://ongaeshi.hatenablog.com/entry/org-and-open-junk-memo-life
+  (require 'open-junk-file)
+  (setq open-junk-file-format "~/Google ドライブ/memo/%Y-%m%d-%H%M%S.")
+  (bind-key "C-x j" 'open-junk-file) ;; C-c uのあと、Shift+→とかで範囲選択
+  ;;
+  ;; yas-snippets   https://github.com/syl20bnr/spacemacs/issues/10316
+  (setq yas-snippet-dirs
+        '("~/.emacs.d/private/snippets")
+        )
+  (yasnippet-snippets-initialize)
+  ;;
+  (require 'org)
+  (require 'ob-C)
+  ;;(require 'ob-ruby)
+  (require 'ob-ipython)
+  (customize-set-variable 'org-directory "~/Google ドライブ/memo")
+  (customize-set-variable 'org-agenda-files (list org-directory))
+  (customize-set-variable 'org-src-fontify-natively t)
+
+  (bind-keys :map org-mode-map
+             ("C-c a" . org-show-all)	; 全展開
+             )
+
+  ;; https://qiita.com/Duct-and-rice/items/ad77ab8b41b0cd83f1ec
+  (require 'org-variable-pitch)
+  (add-hook 'org-mode-hook 'org-variable-pitch-minor-mode)
+  (add-hook 'org-mode-hook 'visual-fill-column-mode)
+  (add-hook 'org-mode-hook 'visual-line-mode)
+  ;;
+  (org-link-set-parameters "file+emacs") ;since Org 9.0
+  (org-link-set-parameters "file+sys") ;since Org 9.0
+
   ;; use company for auto-complete every mode
-                                        ;(global-company-mode)
+  ;;(global-company-mode)
 
   ;; use Marked2 for markdown open command
   ;; via: http://jblevins.org/log/marked-2-command
   ;;(setq markdown-open-command "/usr/local/bin/mark")
   ;;(setq markdown-open-command "/usr/local/bin/markdown")
   ;;(setq markdown-command "/usr/bin/pandoc --smart -f markdown -t html")
-
   ;; see via https://github.com/syl20bnr/spacemacs/issues/2032
   (fset 'evil-visual-update-x-selection 'ignore)
 
   ;; editorconfig-mode enabled
   ;;(editorconfig-mode 1)
-
-  ;; c-mode
-  (add-hook 'c-mode-hook '(lambda ()
-                            (c-set-style "bsd")
-                            (setq tab-width 8)
-                            ) t)
 
   (bind-key "M-n" 'evil-normal-state)
   (bind-key "C-n" 'my/evil-paste-pop-n evil-normal-state-map)
@@ -520,7 +759,7 @@ you should place your code here."
    '(helm-ag-base-command "rg --vimgrep --no-heading --smart-case"))
 
   ;; for OSX
-  (when (eq system-type 'darwin)
+  (when (spacemacs/system-is-mac)
 ;;;; from https://moneyforward.com/engineers_blog/2016/04/07/the-third-editor/
     ;; 入力ソースの設定が必要
     ;;    (defun mac-selected-keyboard-input-source-change-hook-func ()
@@ -537,10 +776,6 @@ you should place your code here."
     ;;              '(lambda () (mac-select-input-source "com.google.inputmethod.Japanese.Roman")))
     )
 
-  (setq ispell-local-dictionary "en_US")
-  (setq ispell-local-dictionary-alist
-        '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil nil nil utf-8)))
-
   )
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -552,9 +787,10 @@ you should place your code here."
  '(helm-gtags-auto-update t t)
  '(helm-gtags-ignore-case t t)
  '(helm-gtags-path-style (quote relative))
+ '(org-pandoc-command "c:/Program Files/Pandoc/pandoc.exe")
  '(package-selected-packages
    (quote
-    (helm-cscope xcscope white-sand-theme rebecca-theme spinner org-category-capture alert log4e gntp org-mime mozc hydra dash-functional parent-mode projectile request gitignore-mode pos-tip pkg-info epl flx exotica-theme ghub let-alist iedit anzu highlight autothemer company rust-mode bind-map yasnippet packed anaconda-mode pythonic f dash s avy helm-core async auto-complete popup zenburn-theme use-package solarized-theme ox-pandoc monokai-theme markdown-toc markdown-mode intero inkpot-theme gruvbox-theme evil-mc evil-matchit darkokai-theme ghc smartparens evil undo-tree haskell-mode flycheck helm org-plus-contrib magit magit-popup with-editor slime powerline zonokai-theme zen-and-art-theme yapfify xterm-color ws-butler winum which-key volatile-highlights vmd-mode vi-tilde-fringe uuidgen unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme toml-mode toc-org tao-theme tangotango-theme tango-plus-theme tango-2-theme swift-mode sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spaceline spacegray-theme soothe-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slime-company shell-pop seti-theme reverse-theme restart-emacs rainbow-delimiters railscasts-theme racer pyvenv pytest pyenv-mode py-isort purple-haze-theme professional-theme popwin plantuml-mode planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pcre2el pastels-on-dark-theme paradox pandoc-mode orgit organic-green-theme org-projectile org-present org-pomodoro org-download org-bullets open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme neotree naquadah-theme mwim mustang-theme multi-term mozc-popup mozc-im move-text monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme majapahit-theme magit-gitflow madhat2r-theme macrostep lush-theme lorem-ipsum live-py-mode linum-relative link-hint light-soap-theme jbeans-theme jazz-theme ir-black-theme info+ indent-guide hy-mode hungry-delete htmlize ht hlint-refactor hl-todo hindent highlight-parentheses highlight-numbers highlight-indentation hide-comnt heroku-theme hemisu-theme help-fns+ helm-themes helm-swoop helm-pydoc helm-projectile helm-mode-manager helm-make helm-hoogle helm-gtags helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag hc-zenburn-theme haskell-snippets gruber-darker-theme grandshell-theme goto-chg gotham-theme google-translate golden-ratio gnuplot gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-commit gh-md ggtags gandalf-theme fuzzy flycheck-rust flycheck-pos-tip flycheck-haskell flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-magit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu espresso-theme eshell-z eshell-prompt-extras esh-help emoji-cheat-sheet-plus elisp-slime-nav dumb-jump dracula-theme django-theme disaster diminish define-word darktooth-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-statistics company-ghci company-ghc company-emoji company-cabal company-c-headers company-anaconda common-lisp-snippets column-enforce-mode color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmm-mode cmake-mode clues-theme clean-aindent-mode clang-format cherry-blossom-theme cargo busybee-theme bubbleberry-theme birds-of-paradise-plus-theme bind-key badwolf-theme auto-yasnippet auto-highlight-symbol auto-compile apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-window ace-link ace-jump-helm-line ac-ispell)))
+    (lv flyspell-correct-helm flyspell-correct auto-dictionary transient yasnippet-snippets writeroom-mode visual-fill-column org-variable-pitch ob-ipython helm-cscope xcscope white-sand-theme rebecca-theme spinner org-category-capture alert log4e gntp org-mime mozc hydra dash-functional parent-mode projectile request gitignore-mode pos-tip pkg-info epl flx exotica-theme ghub let-alist iedit anzu highlight autothemer company rust-mode bind-map yasnippet packed anaconda-mode pythonic f dash s avy helm-core async auto-complete popup zenburn-theme use-package solarized-theme ox-pandoc monokai-theme markdown-toc markdown-mode intero inkpot-theme gruvbox-theme evil-mc evil-matchit darkokai-theme ghc smartparens evil undo-tree haskell-mode flycheck helm org-plus-contrib magit magit-popup with-editor slime powerline zonokai-theme zen-and-art-theme yapfify xterm-color ws-butler winum which-key volatile-highlights vmd-mode vi-tilde-fringe uuidgen unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme toml-mode toc-org tao-theme tangotango-theme tango-plus-theme tango-2-theme swift-mode sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spaceline spacegray-theme soothe-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle slime-company shell-pop seti-theme reverse-theme restart-emacs rainbow-delimiters railscasts-theme racer pyvenv pytest pyenv-mode py-isort purple-haze-theme professional-theme popwin plantuml-mode planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pcre2el pastels-on-dark-theme paradox pandoc-mode orgit organic-green-theme org-projectile org-present org-pomodoro org-download org-bullets open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme neotree naquadah-theme mwim mustang-theme multi-term mozc-popup mozc-im move-text monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme majapahit-theme magit-gitflow madhat2r-theme macrostep lush-theme lorem-ipsum live-py-mode linum-relative link-hint light-soap-theme jbeans-theme jazz-theme ir-black-theme info+ indent-guide hy-mode hungry-delete htmlize ht hlint-refactor hl-todo hindent highlight-parentheses highlight-numbers highlight-indentation hide-comnt heroku-theme hemisu-theme help-fns+ helm-themes helm-swoop helm-pydoc helm-projectile helm-mode-manager helm-make helm-hoogle helm-gtags helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag hc-zenburn-theme haskell-snippets gruber-darker-theme grandshell-theme goto-chg gotham-theme google-translate golden-ratio gnuplot gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-commit gh-md ggtags gandalf-theme fuzzy flycheck-rust flycheck-pos-tip flycheck-haskell flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-magit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu espresso-theme eshell-z eshell-prompt-extras esh-help emoji-cheat-sheet-plus elisp-slime-nav dumb-jump dracula-theme django-theme disaster diminish define-word darktooth-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-statistics company-ghci company-ghc company-emoji company-cabal company-c-headers company-anaconda common-lisp-snippets column-enforce-mode color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmm-mode cmake-mode clues-theme clean-aindent-mode clang-format cherry-blossom-theme cargo busybee-theme bubbleberry-theme birds-of-paradise-plus-theme bind-key badwolf-theme auto-yasnippet auto-highlight-symbol auto-compile apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-window ace-link ace-jump-helm-line ac-ispell)))
  '(paradox-automatically-star t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
